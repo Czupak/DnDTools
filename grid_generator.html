@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>D&D Biome Grid Generator</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    /* LEFT PANEL */
+    #leftPanel {
+        width: 320px;
+        padding: 20px;
+        border-right: 2px solid #ccc;
+        overflow-y: auto;
+        background: #f7f7f7;
+    }
+
+    /* RIGHT PANEL */
+    #rightPanel {
+        flex-grow: 1;
+        padding: 20px;
+        overflow: auto;
+        background: #fff;
+    }
+
+    .section {
+        margin-bottom: 20px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        background: #fff;
+    }
+
+    label { display: block; margin-top: 6px; }
+    input[type="number"], input[type="text"], select { width: 100%; }
+
+    canvas { border: 1px solid #000; margin-top: 20px; }
+
+    #progressContainer {
+        width: 100%;
+        height: 25px;
+        background: #ddd;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-top: 20px;
+        display: none;
+        box-shadow: inset 0 0 5px rgba(0,0,0,0.3);
+    }
+    #progressBar {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #4caf50, #8bc34a);
+        transition: width 0.1s ease-out;
+    }
+
+    button {
+        width: 100%;
+        padding: 10px;
+        margin-top: 10px;
+        cursor: pointer;
+    }
+</style>
+</head>
+<body>
+
+<div id="leftPanel">
+
+<h1>D&D Grid Generator</h1>
+
+<div class="section">
+    <h2>1. GRID SIZE</h2>
+
+    <label>Tile Size (mm):
+        <select id="tileSize">
+            <option value="25">25 mm</option>
+        </select>
+    </label>
+
+    <div style="margin-top: 10px;">
+        <strong>Paper presets:</strong><br>
+        <button id="presetA4">A4 (Portrait)</button>
+        <button id="presetA4L">A4 (Landscape)</button>
+    </div>
+
+    <label>Tiles X:
+        <input type="number" id="tilesX" value="20" min="1">
+    </label>
+
+    <label>Tiles Y:
+        <input type="number" id="tilesY" value="20" min="1">
+    </label>
+
+    <label>Seed:
+        <input type="text" id="seed" value="12345">
+    </label>
+</div>
+
+<div class="section">
+    <h2>2. BIOME PRESET</h2>
+    <label>Biome:
+        <select id="biome">
+            <option value="forest">Forest</option>
+            <option value="grassland">Grassland</option>
+            <option value="desert">Desert</option>
+            <option value="swamp">Swamp</option>
+            <option value="snow">Snow</option>
+            <option value="volcanic">Volcanic</option>
+        </select>
+    </label>
+</div>
+
+<div class="section">
+    <h2>3. GRID STYLE</h2>
+    <label>Line Width (px):
+        <input type="number" id="lineWidth" value="1" min="1">
+    </label>
+
+    <label>Line Color:
+        <input type="color" id="lineColor" value="#000000">
+    </label>
+</div>
+
+<button id="generateBtn">GENERATE</button>
+<button id="downloadBtn">DOWNLOAD PNG</button>
+<button id="pdfBtn">EXPORT PDF</button>
+
+<div id="progressContainer">
+    <div id="progressBar"></div>
+</div>
+
+</div>
+
+<div id="rightPanel">
+    <canvas id="gridCanvas"></canvas>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+// --- CONFIG ---
+const MM_TO_PX = 3.78;
+
+// --- Seeded RNG ---
+function mulberry32(seed) {
+    let t = seed;
+    return function() {
+        t |= 0; t = t + 0x6D2B79F5 | 0;
+        let r = Math.imul(t ^ t >>> 15, 1 | t);
+        r ^= r + Math.imul(r ^ r >>> 7, 61 | r);
+        return ((r ^ r >>> 14) >>> 0) / 4294967296;
+    }
+}
+
+// --- Perlin Noise ---
+class Perlin {
+    constructor(seed) {
+        this.rng = mulberry32(seed);
+        this.gradients = {};
+    }
+    randomGradient(ix, iy) {
+        const key = ix + "," + iy;
+        if (this.gradients[key]) return this.gradients[key];
+        const angle = this.rng() * Math.PI * 2;
+        this.gradients[key] = {x: Math.cos(angle), y: Math.sin(angle)};
+        return this.gradients[key];
+    }
+    dot(ix, iy, x, y) {
+        const g = this.randomGradient(ix, iy);
+        return (x - ix) * g.x + (y - iy) * g.y;
+    }
+    fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+    noise(x, y) {
+        const x0 = Math.floor(x), x1 = x0 + 1;
+        const y0 = Math.floor(y), y1 = y0 + 1;
+
+        const sx = this.fade(x - x0);
+        const sy = this.fade(y - y0);
+
+        const n0 = this.dot(x0, y0, x, y);
+        const n1 = this.dot(x1, y0, x, y);
+        const ix0 = n0 + sx * (n1 - n0);
+
+        const n2 = this.dot(x0, y1, x, y);
+        const n3 = this.dot(x1, y1, x, y);
+        const ix1 = n2 + sx * (n3 - n2);
+
+        return ix0 + sy * (ix1 - ix0);
+    }
+}
+
+// --- Biomes ---
+const BIOMES = {
+    forest: { colors: ["#0b3d0b", "#1f7a1f", "#66cc66", "#8b5a2b"], scale: 0.015 },
+    grassland: { colors: ["#7ec850", "#a4e57e", "#d6f5c3"], scale: 0.02 },
+    desert: { colors: ["#e6d8a7", "#d9c27a", "#c2a45d"], scale: 0.03 },
+    swamp: { colors: ["#3b4f2f", "#4f6b3a", "#6e8b55", "#8b7d4f"], scale: 0.015 },
+    snow: { colors: ["#ffffff", "#e6f2ff", "#cce0ff"], scale: 0.02 },
+    volcanic: { colors: ["#2b2b2b", "#3d3d3d", "#ff4500", "#ffae42"], scale: 0.03 }
+};
+
+// --- Helpers ---
+function hexToRGB(hex) {
+    return [
+        parseInt(hex.substring(1, 3), 16),
+        parseInt(hex.substring(3, 5), 16),
+        parseInt(hex.substring(5, 7), 16)
+    ];
+}
+function lerp(a, b, t) { return a + (b - a) * t; }
+function lerpColor(c1, c2, t) {
+    return [
+        Math.round(lerp(c1[0], c2[0], t)),
+        Math.round(lerp(c1[1], c2[1], t)),
+        Math.round(lerp(c1[2], c2[2], t))
+    ];
+}
+
+// --- Progress bar ---
+function updateProgress(percent) {
+    const container = document.getElementById("progressContainer");
+    const bar = document.getElementById("progressBar");
+
+    container.style.display = "block";
+    bar.style.width = percent + "%";
+
+    if (percent >= 100) {
+        setTimeout(() => {
+            container.style.display = "none";
+            bar.style.width = "0%";
+        }, 500);
+    }
+}
+
+// --- Chunked terrain generation ---
+async function generateTerrainChunked(ctx, canvas, biome, perlin) {
+    const imgData = ctx.createImageData(canvas.width, canvas.height);
+    const data = imgData.data;
+
+    const totalPixels = canvas.width * canvas.height;
+    let processed = 0;
+    const chunkSize = 5000;
+
+    function processChunk(start) {
+        const end = Math.min(start + chunkSize, totalPixels);
+
+        for (let i = start; i < end; i++) {
+            const x = i % canvas.width;
+            const y = Math.floor(i / canvas.width);
+
+            const n = (perlin.noise(x * biome.scale, y * biome.scale) + 1) / 2;
+            const idx = Math.floor(n * (biome.colors.length - 1));
+
+            const c1 = hexToRGB(biome.colors[idx]);
+            const c2 = hexToRGB(biome.colors[Math.min(idx + 1, biome.colors.length - 1)]);
+            const t = (n * (biome.colors.length - 1)) % 1;
+
+            const rgb = lerpColor(c1, c2, t);
+
+            const di = i * 4;
+            data[di] = rgb[0];
+            data[di + 1] = rgb[1];
+            data[di + 2] = rgb[2];
+            data[di + 3] = 255;
+        }
+
+        processed = end;
+        updateProgress(Math.floor((processed / totalPixels) * 100));
+
+        return end < totalPixels ? end : null;
+    }
+
+    let next = 0;
+    while (next !== null) {
+        next = processChunk(next);
+        await new Promise(requestAnimationFrame);
+    }
+
+    ctx.putImageData(imgData, 0, 0);
+    updateProgress(100);
+}
+
+// --- A4 PRESET ---
+document.getElementById("presetA4").addEventListener("click", () => {
+    const tileMM = parseInt(document.getElementById("tileSize").value);
+
+    const A4_WIDTH_MM = 210;
+    const A4_HEIGHT_MM = 297;
+
+    const tilesX = Math.floor(A4_WIDTH_MM / tileMM);
+    const tilesY = Math.floor(A4_HEIGHT_MM / tileMM);
+
+    document.getElementById("tilesX").value = tilesX;
+    document.getElementById("tilesY").value = tilesY;
+});
+// --- A4L PRESET ---
+document.getElementById("presetA4L").addEventListener("click", () => {
+    const tileMM = parseInt(document.getElementById("tileSize").value);
+
+    const A4_WIDTH_MM = 297;
+    const A4_HEIGHT_MM = 210;
+
+    const tilesX = Math.floor(A4_WIDTH_MM / tileMM);
+    const tilesY = Math.floor(A4_HEIGHT_MM / tileMM);
+
+    document.getElementById("tilesX").value = tilesX;
+    document.getElementById("tilesY").value = tilesY;
+});
+
+// --- GENERATE ---
+document.getElementById("generateBtn").addEventListener("click", async () => {
+    const tileMM = parseInt(document.getElementById("tileSize").value);
+    const tilesX = parseInt(document.getElementById("tilesX").value);
+    const tilesY = parseInt(document.getElementById("tilesY").value);
+    const seedStr = document.getElementById("seed").value || "0";
+    const seed = seedStr.split("").reduce((a,c)=>a+c.charCodeAt(0),0);
+
+    const biome = BIOMES[document.getElementById("biome").value];
+    const tilePx = tileMM * MM_TO_PX;
+
+    const canvas = document.getElementById("gridCanvas");
+    canvas.width = tilesX * tilePx;
+    canvas.height = tilesY * tilePx;
+
+    const ctx = canvas.getContext("2d");
+    const perlin = new Perlin(seed);
+
+    await generateTerrainChunked(ctx, canvas, biome, perlin);
+
+    const lineWidth = parseInt(document.getElementById("lineWidth").value);
+    const lineColor = document.getElementById("lineColor").value;
+
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = lineWidth;
+
+    for (let x = 0; x <= tilesX; x++) {
+        ctx.beginPath();
+        ctx.moveTo(x * tilePx, 0);
+        ctx.lineTo(x * tilePx, canvas.height);
+        ctx.stroke();
+    }
+
+    for (let y = 0; y <= tilesY; y++) {
+        ctx.beginPath();
+        ctx.moveTo(0, y * tilePx);
+        ctx.lineTo(canvas.width, y * tilePx);
+        ctx.stroke();
+    }
+});
+
+// --- PNG DOWNLOAD ---
+document.getElementById("downloadBtn").addEventListener("click", () => {
+    const canvas = document.getElementById("gridCanvas");
+    const link = document.createElement("a");
+    link.download = "dnd_grid.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+});
+
+// --- PDF EXPORT ---
+document.getElementById("pdfBtn").addEventListener("click", () => {
+    const canvas = document.getElementById("gridCanvas");
+    const { jsPDF } = window.jspdf;
+
+    const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "px",
+        format: [canvas.width, canvas.height]
+    });
+
+    pdf.addImage(canvas, "PNG", 0, 0, canvas.width, canvas.height);
+    pdf.save("dnd_grid.pdf");
+});
+</script>
+
+</body>
+</html>
