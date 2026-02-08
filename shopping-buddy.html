@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ShoppingBuddy - DnD shopping assistant</title>
+<style>
+  :root{--bg:#0f1724;--panel:#0b1220;--accent:#7c3aed;--muted:#94a3b8;--card:#0f1724;--glass:rgba(255,255,255,0.03)}
+  html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#e6eef8;background:linear-gradient(180deg,#071029 0%, #071a2b 100%)}
+  .app{max-width:1100px;margin:28px auto;padding:18px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;box-shadow:0 6px 30px rgba(2,6,23,0.6)}
+  header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+  h1{font-size:20px;margin:0}
+  .top-belt{display:flex;gap:8px;background:var(--panel);padding:8px;border-radius:8px}
+  .belt-btn{background:transparent;border:1px solid rgba(255,255,255,0.04);color:#cfe7ff;padding:8px 12px;border-radius:6px;cursor:pointer}
+  .belt-btn.active{background:var(--accent);color:white;border-color:transparent;box-shadow:0 6px 18px rgba(124,58,237,0.18)}
+  .layout{display:flex;gap:14px}
+  .left,.right{background:var(--card);padding:12px;border-radius:10px}
+  .left{width:320px;min-height:420px}
+  .right{flex:1;min-height:420px}
+  .list{display:flex;flex-direction:column;gap:8px}
+  .entity-btn{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px;background:var(--glass);border:1px solid rgba(255,255,255,0.02);cursor:pointer}
+  .entity-btn .name{font-weight:600}
+  .entity-btn .meta{font-size:12px;color:var(--muted)}
+  .add-btn{display:flex;align-items:center;justify-content:center;padding:8px;border-radius:8px;background:rgba(255,255,255,0.02);cursor:pointer;border:1px dashed rgba(255,255,255,0.03)}
+  form{display:flex;flex-direction:column;gap:8px}
+  label{font-size:13px;color:var(--muted)}
+  input[type="text"],select,textarea,input[type="number"]{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:6px;color:#e6eef8}
+  .row{display:flex;gap:8px}
+  .row > *{flex:1}
+  table{width:100%;border-collapse:collapse;color:#e6eef8}
+  th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left;font-size:13px}
+  th{color:var(--muted);font-weight:600}
+  .small{font-size:12px;color:var(--muted)}
+  .muted{color:var(--muted)}
+  .btn{padding:8px 10px;border-radius:6px;border:0;background:var(--accent);color:white;cursor:pointer}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04)}
+  .checkbox{display:inline-flex;align-items:center;gap:8px}
+  .assign-panel{max-height:360px;overflow:auto;padding:8px;border-radius:8px;background:rgba(255,255,255,0.01)}
+  .group-source{border:1px solid rgba(255,255,255,0.02);padding:8px;border-radius:8px;margin-bottom:8px}
+  .category-row{padding-left:12px;margin-top:6px}
+  .item-row{padding-left:24px;display:flex;align-items:center;justify-content:space-between}
+  .img-thumb{width:36px;height:36px;border-radius:6px;object-fit:cover;border:1px solid rgba(255,255,255,0.04)}
+  .note{font-size:12px;color:var(--muted);margin-top:6px}
+  .danger{background:#7f1d1d}
+  .file-row{display:flex;gap:8px;align-items:center}
+  footer{margin-top:12px;font-size:12px;color:var(--muted);text-align:center}
+  @media(max-width:900px){.layout{flex-direction:column}.left{width:100%}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header>
+    <h1>ShoppingBuddy — DnD shopping assistant</h1>
+  </header>
+
+  <div class="top-belt" role="navigation" aria-label="Main belt">
+    <button class="belt-btn active" data-view="shops" id="btn-shops">SHOPS</button>
+    <button class="belt-btn" data-view="sources" id="btn-sources">SOURCES</button>
+    <button class="belt-btn" data-view="export" id="btn-export">EXPORT/IMPORT</button>
+  </div>
+
+  <div class="layout" style="margin-top:12px">
+    <aside class="left">
+      <div id="left-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <strong id="left-heading">Shops</strong>
+        <div id="left-actions"></div>
+      </div>
+      <div class="list" id="left-list"></div>
+    </aside>
+
+    <main class="right" id="main-panel">
+      <!-- dynamic content -->
+    </main>
+  </div>
+
+  <footer>Data stored in a cookie. Use Export/Import to copy or load JSON.</footer>
+</div>
+
+<script>
+/* ====== Utilities ====== */
+const COOKIE_KEY = 'shoppingbuddy_data';
+function uid(prefix='id'){return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,9)}
+function setCookieJSON(key,obj,days=365){
+  const v = encodeURIComponent(JSON.stringify(obj));
+  const d = new Date(); d.setTime(d.getTime() + (days*24*60*60*1000));
+  document.cookie = key + '=' + v + ';expires=' + d.toUTCString() + ';path=/';
+}
+function getCookieJSON(key){
+  const cookies = document.cookie.split(';').map(s=>s.trim());
+  for(const c of cookies){
+    if(c.startsWith(key+'=')){
+      try{return JSON.parse(decodeURIComponent(c.slice(key.length+1))) }catch(e){return null}
+    }
+  }
+  return null;
+}
+function downloadFile(filename, content){
+  const blob = new Blob([content], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url); a.remove()}, 500);
+}
+
+/* ====== Default fallback generic items ====== */
+const FALLBACK_GENERIC = [
+  {"id":"g_1","name":"Torch","rarity":"","price":{"g":0,"s":1,"c":0},"category":"General","description":"A wooden torch.","image":"","url":""},
+  {"id":"g_2","name":"Rations (1 day)","rarity":"","price":{"g":0,"s":5,"c":0},"category":"Food","description":"One day of travel rations.","image":"","url":""},
+  {"id":"g_3","name":"Shortsword","rarity":"Common","price":{"g":10,"s":0,"c":0},"category":"Weapon","description":"A basic shortsword.","image":"","url":""},
+  {"id":"g_4","name":"Leather Armor","rarity":"Common","price":{"g":10,"s":0,"c":0},"category":"Armor","description":"Light armor.","image":"","url":""}
+];
+
+/* ====== App state ====== */
+let state = {
+  sources: [], // {id,name,immutable,items:[]}
+  shops: [],   // {id,name,location,items: [itemIdRef]}
+  // itemIdRef format: {id: item.id, sourceId: source.id}
+};
+
+/* ====== Persistence ====== */
+function saveState(){
+  // Only save user-editable parts. GENERIC source is included but flagged immutable.
+  setCookieJSON(COOKIE_KEY, state);
+}
+function loadState(){
+  const s = getCookieJSON(COOKIE_KEY);
+  if(s && typeof s === 'object'){
+    state = s;
+  }
+}
+
+/* ====== Generic source loader ====== */
+async function loadGenericSource(){
+  // If GENERIC already exists in state, keep it (but ensure immutable)
+  const existing = state.sources.find(x=>x.name==='GENERIC');
+  if(existing){
+    existing.immutable = true;
+    return;
+  }
+  // Try fetch generic_items.json
+  try{
+    const res = await fetch('shopping-buddy_generic_items.json', {cache:'no-store'});
+    if(res.ok){
+      const items = await res.json();
+      // ensure items have ids and proper shape
+      const normalized = items.map(it=>{
+        return {
+          id: it.id || uid('g'),
+          name: it.name || 'Unnamed',
+          rarity: it.rarity || '',
+          price: it.price || {g:0,s:0,c:0},
+          category: it.category || 'General',
+          description: it.description || '',
+          image: it.image || '',
+          url: it.url || ''
+        };
+      });
+      state.sources.unshift({id: uid('src'), name:'GENERIC', immutable:true, items: normalized});
+      saveState();
+      return;
+    } else {
+      throw new Error('fetch failed');
+    }
+  } catch(e){
+    // fallback
+    state.sources.unshift({id: uid('src'), name:'GENERIC', immutable:true, items: FALLBACK_GENERIC});
+    saveState();
+  }
+}
+
+/* ====== UI helpers ====== */
+const leftHeading = document.getElementById('left-heading');
+const leftActions = document.getElementById('left-actions');
+const leftList = document.getElementById('left-list');
+const mainPanel = document.getElementById('main-panel');
+const btnShops = document.getElementById('btn-shops');
+const btnSources = document.getElementById('btn-sources');
+const btnExport = document.getElementById('btn-export');
+
+function clearActiveBelt(){
+  document.querySelectorAll('.belt-btn').forEach(b=>b.classList.remove('active'));
+}
+function switchView(view){
+  clearActiveBelt();
+  document.querySelector(`[data-view="${view}"]`).classList.add('active');
+
+  // Reset right panel for shops and sources so it doesn't keep previous content
+  if(view === 'shops'){
+    renderShopsLeft();
+    if(state.shops.length) openShop(state.shops[0].id);
+    else mainPanel.innerHTML = '<div class="note">Select a shop or create one with +.</div>';
+    return;
+  }
+
+  if(view === 'sources'){
+    renderSourcesLeft();
+    if(state.sources.length) openSource(state.sources[0].id);
+    else mainPanel.innerHTML = '<div class="note">Select a source or create one with +.</div>';
+    return;
+  }
+
+  if(view === 'export'){
+    renderExportLeft();
+    renderExportPanel();
+    return;
+  }
+}
+
+/* ====== Left column renderers ====== */
+function renderShopsLeft(){
+  leftHeading.textContent = 'Shops';
+  leftActions.innerHTML = '';
+  const add = document.createElement('button'); add.className='add-btn'; add.textContent='+';
+  add.title = 'Add shop';
+  add.onclick = ()=>showAddShopForm();
+  leftActions.appendChild(add);
+
+  leftList.innerHTML = '';
+  state.shops.forEach(s=>{
+    const el = document.createElement('div'); el.className='entity-btn';
+    el.innerHTML = `<div><div class="name">${escapeHtml(s.name)}</div><div class="meta">${escapeHtml(s.location||'')}</div></div><div class="meta">▶</div>`;
+    el.onclick = ()=>openShop(s.id);
+    leftList.appendChild(el);
+  });
+  // if none, show hint
+  if(state.shops.length===0){
+    const hint = document.createElement('div'); hint.className='note muted'; hint.textContent='No shops yet. Click + to add one.';
+    leftList.appendChild(hint);
+  }
+}
+
+function renderSourcesLeft(){
+  leftHeading.textContent = 'Sources';
+  leftActions.innerHTML = '';
+  const add = document.createElement('button'); add.className='add-btn'; add.textContent='+';
+  add.title = 'Add source';
+  add.onclick = ()=>showAddSourceForm();
+  leftActions.appendChild(add);
+
+  leftList.innerHTML = '';
+  state.sources.forEach(src=>{
+    const el = document.createElement('div'); el.className='entity-btn';
+    const imm = src.immutable ? ' (locked)' : '';
+    el.innerHTML = `<div><div class="name">${escapeHtml(src.name)}${imm}</div><div class="meta">${src.items.length} items</div></div><div class="meta">▶</div>`;
+    el.onclick = ()=>openSource(src.id);
+    leftList.appendChild(el);
+  });
+}
+
+/* ====== Left for export ====== */
+function renderExportLeft(){
+  leftHeading.textContent = 'Export / Import';
+  leftActions.innerHTML = '';
+  leftList.innerHTML = '';
+  const hint = document.createElement('div'); hint.className='note'; hint.innerHTML = 'Use the right panel to copy or paste your data as JSON. You can also load or save a file.';
+  leftList.appendChild(hint);
+}
+
+/* ====== Main panel views ====== */
+function openSource(sourceId){
+  const src = state.sources.find(s=>s.id===sourceId);
+  if(!src) return;
+  mainPanel.innerHTML = '';
+  const title = document.createElement('div'); title.style.display='flex'; title.style.justifyContent='space-between'; title.style.alignItems='center';
+  title.innerHTML = `<div><h3 style="margin:0">${escapeHtml(src.name)}</h3><div class="small">${src.items.length} items</div></div>`;
+  mainPanel.appendChild(title);
+
+  // Items table
+  const table = document.createElement('table');
+  table.innerHTML = `<thead><tr><th>Name</th><th>Rarity</th><th>Price</th><th>Category</th><th>Description</th><th>Image</th><th>Url</th><th></th></tr></thead>`;
+  const tbody = document.createElement('tbody');
+  src.items.forEach(it=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${escapeHtml(it.name)}</td>
+      <td>${escapeHtml(it.rarity||'')}</td>
+      <td>${formatPrice(it.price)}</td>
+      <td>${escapeHtml(it.category)}</td>
+      <td>${escapeHtml(it.description||'')}</td>
+      <td>${it.image?'<img src="'+escapeAttr(it.image)+'" class="img-thumb" />':''}</td>
+      <td>${it.url?'<a href="'+escapeAttr(it.url)+'" target="_blank" class="small">link</a>':''}</td>
+      <td></td>`;
+    if(!src.immutable){
+      const del = document.createElement('button'); del.className='btn ghost'; del.textContent='Delete';
+      del.onclick = (e)=>{ e.stopPropagation(); if(confirm('Delete item?')){ src.items = src.items.filter(x=>x.id!==it.id); saveState(); openSource(src.id); renderSourcesLeft(); } };
+      tr.cells[7].appendChild(del);
+    } else {
+      tr.cells[7].innerHTML = '<span class="small muted">locked</span>';
+    }
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  mainPanel.appendChild(table);
+
+  // Add item form (unless immutable)
+  if(!src.immutable){
+    const formWrap = document.createElement('div'); formWrap.style.marginTop='12px';
+    formWrap.innerHTML = `<h4>Add item</h4>`;
+    const form = document.createElement('form');
+    form.innerHTML = `
+      <label>Name <span class="small muted">*</span><input type="text" name="name" required /></label>
+      <label>Rarity<select name="rarity"><option value=""></option><option>Common</option><option>Uncommon</option><option>Rare</option><option>Very Rare</option><option>Legendary</option></select></label>
+      <div class="row">
+        <label>Gold<input type="number" name="g" min="0" value="0" /></label>
+        <label>Silver<input type="number" name="s" min="0" value="0" /></label>
+        <label>Copper<input type="number" name="c" min="0" value="0" /></label>
+      </div>
+      <label>Category<select name="category" required><option>Weapon</option><option>Armor</option><option>General</option><option>Food</option></select></label>
+      <label>Description<textarea name="description" rows="2"></textarea></label>
+      <label>Image URL<input type="text" name="image" /></label>
+      <label>Url<input type="text" name="url" /></label>
+      <div style="display:flex;gap:8px"><button class="btn" type="submit">Add</button><button class="btn ghost" type="button" id="cancel-add">Cancel</button></div>
+    `;
+    form.onsubmit = (e)=>{
+      e.preventDefault();
+      const fd = new FormData(form);
+      const item = {
+        id: uid('it'),
+        name: fd.get('name').trim(),
+        rarity: fd.get('rarity'),
+        price: {g: Number(fd.get('g')||0), s: Number(fd.get('s')||0), c: Number(fd.get('c')||0)},
+        category: fd.get('category'),
+        description: fd.get('description')||'',
+        image: fd.get('image')||'',
+        url: fd.get('url')||''
+      };
+      if(!item.name || !item.category) { alert('Name and Category required'); return; }
+      src.items.push(item);
+      saveState();
+      openSource(src.id);
+      renderSourcesLeft();
+    };
+    form.querySelector('#cancel-add').onclick = ()=>openSource(src.id);
+    formWrap.appendChild(form);
+    mainPanel.appendChild(formWrap);
+  } else {
+    const note = document.createElement('div'); note.className='note'; note.textContent='This source is read-only and cannot be modified.';
+    mainPanel.appendChild(note);
+  }
+}
+
+function openShop(shopId){
+  const shop = state.shops.find(s=>s.id===shopId);
+  if(!shop) return;
+  mainPanel.innerHTML = '';
+  const header = document.createElement('div'); header.style.display='flex'; header.style.justifyContent='space-between'; header.style.alignItems='center';
+  header.innerHTML = `<div><h3 style="margin:0">${escapeHtml(shop.name)}</h3><div class="small">${escapeHtml(shop.location||'')}</div></div>`;
+  mainPanel.appendChild(header);
+
+  // Shop basic edit
+  const form = document.createElement('form'); form.style.marginTop='12px';
+  form.innerHTML = `
+    <label>Name <input type="text" name="name" value="${escapeAttr(shop.name)}" required /></label>
+    <label>Location <input type="text" name="location" value="${escapeAttr(shop.location||'')}" /></label>
+    <div style="display:flex;gap:8px"><button class="btn" type="submit">Save</button><button class="btn ghost" type="button" id="del-shop">Delete</button></div>
+  `;
+  form.onsubmit = (e)=>{ e.preventDefault(); const fd=new FormData(form); shop.name = fd.get('name').trim(); shop.location = fd.get('location').trim(); saveState(); renderShopsLeft(); openShop(shop.id); };
+  form.querySelector('#del-shop').onclick = ()=>{
+    if(!confirm('Delete shop?')) return;
+    state.shops = state.shops.filter(s=>s.id!==shop.id);
+    saveState(); renderShopsLeft(); mainPanel.innerHTML = '<div class="note">Shop deleted.</div>';
+  };
+  mainPanel.appendChild(form);
+
+  // Assignment panel
+  const assignWrap = document.createElement('div'); assignWrap.style.marginTop='12px';
+  assignWrap.innerHTML = `<h4>Assign items to shop</h4><div class="assign-panel" id="assign-panel"></div>`;
+  mainPanel.appendChild(assignWrap);
+  const panel = assignWrap.querySelector('#assign-panel');
+
+  // Build grouped view: sources -> categories -> items
+  state.sources.forEach(src=>{
+    const srcDiv = document.createElement('div'); srcDiv.className='group-source';
+    const srcCheckbox = document.createElement('input'); srcCheckbox.type='checkbox';
+    // checked if all items from this source are assigned
+    const srcItemRefs = src.items.map(it=>({id:it.id, sourceId:src.id}));
+    const assignedFromSource = srcItemRefs.every(ref=>isItemAssignedToShop(ref, shop));
+    srcCheckbox.checked = assignedFromSource;
+    srcCheckbox.onchange = ()=>{
+      if(srcCheckbox.checked){
+        // assign all
+        src.items.forEach(it=>assignItemToShop({id:it.id, sourceId:src.id}, shop, true));
+      } else {
+        // unassign all
+        src.items.forEach(it=>assignItemToShop({id:it.id, sourceId:src.id}, shop, false));
+      }
+      saveState(); openShop(shop.id);
+    };
+    const srcHeader = document.createElement('div'); srcHeader.style.display='flex'; srcHeader.style.justifyContent='space-between'; srcHeader.style.alignItems='center';
+    srcHeader.innerHTML = `<div style="display:flex;gap:8px;align-items:center"><label class="checkbox"><input type="checkbox" ${srcCheckbox.checked? 'checked':''}/> <strong style="margin-left:6px">${escapeHtml(src.name)}</strong></label></div><div class="small">${src.items.length} items</div>`;
+    // replace the checkbox input with our handler element
+    srcHeader.querySelector('input').replaceWith(srcCheckbox);
+    srcDiv.appendChild(srcHeader);
+
+    // group by category
+    const categories = {};
+    src.items.forEach(it=>{
+      categories[it.category] = categories[it.category] || [];
+      categories[it.category].push(it);
+    });
+    Object.keys(categories).forEach(cat=>{
+      const catDiv = document.createElement('div'); catDiv.className='category-row';
+      const catItems = categories[cat];
+      const catCheckbox = document.createElement('input'); catCheckbox.type='checkbox';
+      const catAssigned = catItems.every(it=>isItemAssignedToShop({id:it.id, sourceId:src.id}, shop));
+      catCheckbox.checked = catAssigned;
+      catCheckbox.onchange = ()=>{
+        catItems.forEach(it=>assignItemToShop({id:it.id, sourceId:src.id}, shop, catCheckbox.checked));
+        saveState(); openShop(shop.id);
+      };
+      const catHeader = document.createElement('div'); catHeader.style.display='flex'; catHeader.style.justifyContent='space-between'; catHeader.style.alignItems='center';
+      catHeader.innerHTML = `<div style="display:flex;gap:8px;align-items:center"><label class="checkbox"><input type="checkbox" ${catCheckbox.checked? 'checked':''}/> <span style="margin-left:6px">${escapeHtml(cat)}</span></label></div><div class="small">${catItems.length}</div>`;
+      catHeader.querySelector('input').replaceWith(catCheckbox);
+      catDiv.appendChild(catHeader);
+
+      // items
+      catItems.forEach(it=>{
+        const itemRow = document.createElement('div'); itemRow.className='item-row';
+        const itemAssigned = isItemAssignedToShop({id:it.id, sourceId:src.id}, shop);
+        itemRow.innerHTML = `<div style="display:flex;gap:8px;align-items:center"><label class="checkbox"><input type="checkbox" ${itemAssigned? 'checked':''}/> <span style="margin-left:6px">${escapeHtml(it.name)}</span></label></div><div class="small">${formatPrice(it.price)}</div>`;
+        const cb = itemRow.querySelector('input');
+        cb.onchange = ()=>{
+          assignItemToShop({id:it.id, sourceId:src.id}, shop, cb.checked);
+          saveState(); openShop(shop.id);
+        };
+        catDiv.appendChild(itemRow);
+      });
+
+      srcDiv.appendChild(catDiv);
+    });
+
+    panel.appendChild(srcDiv);
+  });
+
+  // show assigned count
+  const assignedCount = shop.items.length;
+  const note = document.createElement('div'); note.className='note'; note.textContent = `${assignedCount} items assigned to this shop.`;
+  mainPanel.appendChild(note);
+}
+
+/* ====== Assignment helpers ====== */
+function isItemAssignedToShop(ref, shop){
+  return shop.items.some(it => it.id === ref.id && it.sourceId === ref.sourceId);
+}
+function assignItemToShop(ref, shop, assign=true){
+  if(assign){
+    if(!isItemAssignedToShop(ref, shop)) shop.items.push(ref);
+  } else {
+    shop.items = shop.items.filter(it => !(it.id===ref.id && it.sourceId===ref.sourceId));
+  }
+}
+
+/* ====== Add forms ====== */
+function showAddSourceForm(){
+  mainPanel.innerHTML = `<h3>New Source</h3>`;
+  const form = document.createElement('form');
+  form.innerHTML = `<label>Name <input type="text" name="name" required /></label><div style="display:flex;gap:8px"><button class="btn" type="submit">Create</button><button class="btn ghost" type="button" id="cancel">Cancel</button></div>`;
+  form.onsubmit = (e)=>{ e.preventDefault(); const fd=new FormData(form); const name = fd.get('name').trim(); if(!name) return alert('Name required'); state.sources.push({id:uid('src'), name, immutable:false, items:[]}); saveState(); renderSourcesLeft(); openSource(state.sources[state.sources.length-1].id); };
+  form.querySelector('#cancel').onclick = ()=>{ mainPanel.innerHTML=''; };
+  mainPanel.appendChild(form);
+}
+
+function showAddShopForm(){
+  mainPanel.innerHTML = `<h3>New Shop</h3>`;
+  const form = document.createElement('form');
+  form.innerHTML = `<label>Name <input type="text" name="name" required /></label><label>Location <input type="text" name="location" /></label><div style="display:flex;gap:8px"><button class="btn" type="submit">Create</button><button class="btn ghost" type="button" id="cancel">Cancel</button></div>`;
+  form.onsubmit = (e)=>{ e.preventDefault(); const fd=new FormData(form); const name = fd.get('name').trim(); if(!name) return alert('Name required'); const shop = {id:uid('shop'), name, location:fd.get('location')||'', items:[]}; state.shops.push(shop); saveState(); renderShopsLeft(); openShop(shop.id); };
+  form.querySelector('#cancel').onclick = ()=>{ mainPanel.innerHTML=''; };
+  mainPanel.appendChild(form);
+}
+
+/* ====== Export / Import view ====== */
+function renderExportPanel(){
+  mainPanel.innerHTML = `<h3>Export / Import</h3>`;
+  const wrap = document.createElement('div');
+  wrap.innerHTML = `
+    <label>Data JSON<textarea id="json-area" rows="12"></textarea></label>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+      <button class="btn" id="btn-export-json">Copy Export JSON</button>
+      <button class="btn ghost" id="btn-save-file">Save to file</button>
+      <input type="file" id="file-input" style="display:none" accept="application/json" />
+      <button class="btn ghost" id="btn-load-file">Load from file</button>
+      <button class="btn ghost" id="btn-import" style="display:none">Import</button>
+    </div>
+    <div class="note" style="margin-top:8px">Pasting valid JSON into the textarea will show the Import button. Import replaces current user data.</div>
+  `;
+  mainPanel.appendChild(wrap);
+
+  const area = document.getElementById('json-area');
+  const btnExportJson = document.getElementById('btn-export-json');
+  const btnSaveFile = document.getElementById('btn-save-file');
+  const btnLoadFile = document.getElementById('btn-load-file');
+  const fileInput = document.getElementById('file-input');
+  const btnImport = document.getElementById('btn-import');
+
+  btnExportJson.onclick = ()=>{
+    const exportData = JSON.stringify(state, null, 2);
+    navigator.clipboard?.writeText(exportData).then(()=>{ alert('JSON copied to clipboard'); }, ()=>{ area.value = exportData; alert('Clipboard not available — JSON placed in textarea'); });
+  };
+  btnSaveFile.onclick = ()=>{
+    const exportData = JSON.stringify(state, null, 2);
+    downloadFile('shoppingbuddy_export.json', exportData);
+  };
+  btnLoadFile.onclick = ()=> fileInput.click();
+  fileInput.onchange = (e)=>{
+    const f = e.target.files[0];
+    if(!f) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{ area.value = reader.result; btnImport.style.display='inline-block'; };
+    reader.readAsText(f);
+  };
+  area.oninput = ()=>{
+    try{
+      const parsed = JSON.parse(area.value);
+      btnImport.style.display = 'inline-block';
+    }catch(e){
+      btnImport.style.display = 'none';
+    }
+  };
+  btnImport.onclick = ()=>{
+    try{
+      const parsed = JSON.parse(area.value);
+      // Basic validation: must have sources and shops arrays
+      if(!parsed.sources || !Array.isArray(parsed.sources) || !parsed.shops || !Array.isArray(parsed.shops)) return alert('Invalid data format.');
+      // Ensure GENERIC remains immutable: if user imported a GENERIC, keep its immutable flag
+      parsed.sources = parsed.sources.map(s => ({...s, immutable: s.name==='GENERIC' ? true : !!s.immutable}));
+      state = parsed;
+      saveState();
+      renderSourcesLeft(); renderShopsLeft(); alert('Import successful.');
+      switchView('shops');
+    }catch(e){
+      alert('Invalid JSON: ' + e.message);
+    }
+  };
+
+  // preload textarea with current state
+  area.value = JSON.stringify(state, null, 2);
+}
+
+/* ====== Helpers ====== */
+function formatPrice(p){
+  if(!p) return '';
+  const parts = [];
+  if(p.g) parts.push(p.g + 'g');
+  if(p.s) parts.push(p.s + 's');
+  if(p.c) parts.push(p.c + 'c');
+  return parts.join(' ');
+}
+function escapeHtml(s){ if(!s) return ''; return String(s).replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+function escapeAttr(s){ return escapeHtml(s).replace(/"/g,'&quot;'); }
+
+/* ====== Initialization ====== */
+async function init(){
+  // load cookie state if present
+  loadState();
+  // ensure GENERIC exists
+  await loadGenericSource();
+  // ensure arrays exist
+  state.sources = state.sources || [];
+  state.shops = state.shops || [];
+  // ensure items have ids
+  state.sources.forEach(src=>{
+    src.items = src.items || [];
+    src.items.forEach(it=>{ if(!it.id) it.id = uid('it'); });
+    if(src.name==='GENERIC') src.immutable = true;
+  });
+  saveState();
+  // initial render
+  renderShopsLeft();
+  mainPanel.innerHTML = '<div class="note">Select a shop or create one with +.</div>';
+  // attach belt handlers
+  btnShops.onclick = ()=>switchView('shops');
+  btnSources.onclick = ()=>switchView('sources');
+  btnExport.onclick = ()=>{ switchView('export'); renderExportPanel(); };
+}
+init();
+
+/* ====== Expose render functions for left updates ====== */
+window.renderShopsLeft = renderShopsLeft;
+window.renderSourcesLeft = renderSourcesLeft;
+window.renderExportPanel = renderExportPanel;
+
+/* ====== End ====== */
+</script>
+</body>
+</html>

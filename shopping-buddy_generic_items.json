@@ -1,0 +1,89 @@
+[
+  {"id":"it_001","name":"Dagger","rarity":"Common","price":{"g":0,"s":2,"c":0},"category":"Weapon","description":"A small, easily concealed blade useful for close combat and utility tasks.","image":"","url":""},
+  {"id":"it_002","name":"Shortsword","rarity":"Common","price":{"g":10,"s":0,"c":0},"category":"Weapon","description":"A light one-handed sword balanced for quick strikes and parries.","image":"","url":""},
+  {"id":"it_003","name":"Longsword","rarity":"Common","price":{"g":15,"s":0,"c":0},"category":"Weapon","description":"A versatile sword effective for slashing and thrusting.","image":"","url":""},
+  {"id":"it_004","name":"Greatsword","rarity":"Uncommon","price":{"g":50,"s":0,"c":0},"category":"Weapon","description":"A heavy two-handed blade that deals powerful blows at the cost of speed.","image":"","url":""},
+  {"id":"it_005","name":"Shortbow","rarity":"Common","price":{"g":25,"s":0,"c":0},"category":"Weapon","description":"A compact bow for ranged attacks at moderate distances.","image":"","url":""},
+  {"id":"it_006","name":"Longbow","rarity":"Uncommon","price":{"g":50,"s":0,"c":0},"category":"Weapon","description":"A long-range bow favored by skilled archers for accuracy and reach.","image":"","url":""},
+  {"id":"it_007","name":"Light Crossbow","rarity":"Common","price":{"g":25,"s":0,"c":0},"category":"Weapon","description":"A mechanically simple ranged weapon that fires bolts with force.","image":"","url":""},
+  {"id":"it_008","name":"Spear","rarity":"Common","price":{"g":1,"s":0,"c":0},"category":"Weapon","description":"A pole weapon useful for thrusting and throwing at short range.","image":"","url":""},
+  {"id":"it_009","name":"Quarterstaff","rarity":"Common","price":{"g":0,"s":2,"c":0},"category":"Weapon","description":"A sturdy wooden staff used for defense and simple strikes.","image":"","url":""},
+  {"id":"it_010","name":"Mace","rarity":"Common","price":{"g":5,"s":0,"c":0},"category":"Weapon","description":"A blunt weapon with a heavy head, effective against armored foes.","image":"","url":""},
+
+  {"id":"it_011","name":"Leather Armor","rarity":"Common","price":{"g":10,"s":0,"c":0},"category":"Armor","description":"Light armor made from treated hides; offers mobility with modest protection.","image":"","url":""},
+  {"id":"it_012","name":"Studded Leather","rarity":"Uncommon","price":{"g":45,"s":0,"c":0},"category":"Armor","description":"Leather reinforced with metal studs for improved defense while remaining light.","image":"","url":""},
+  {"id":"it_013","name":"Chain Shirt","rarity":"Common","price":{"g":50,"s":0,"c":0},"category":"Armor","description":"A flexible layer of interlocking rings worn under clothing or armor.","image":"","url":""},
+  {"id":"it_014","name":"Scale Mail","rarity":"Uncommon","price":{"g":50,"s":0,"c":0},"category":"Armor","description":"Overlapping metal scales that balance protection and flexibility.","image":"","url":""},
+  {"id":"it_015","name":"Chain Mail","rarity":"Uncommon","price":{"g":75,"s":0,"c":0},"category":"Armor","description":"Heavy interlinked rings providing solid protection at the cost of mobility.","image":"","url":""},
+  {"id":"it_016","name":"Plate Armor","rarity":"Rare","price":{"g":1500,"s":0,"c":0},"category":"Armor","description":"Full metal plates offering maximum protection for heavily armored warriors.","image":"","url":""},
+  {"id":"it_017","name":"Shield","rarity":"Common","price":{"g":10,"s":0,"c":0},"category":"Armor","description":"A handheld shield that provides additional protection when used in combat.","image":"","url":""},
+
+  {"id":"it_018","name":"Arrows (20)","rarity":"","price":{"g":1,"s":0,"c":0},"category":"Ammunition","description":"A bundle of twenty arrows for bows.","image":"","url":""},
+  {"id":"it_019","name":"Bolts (20)","rarity":"","price":{"g":1,"s":0,"c":0},"category":"Ammunition","description":"A set of twenty crossbow bolts.","image":"","url":""},
+
+  {"id":"it_020","name":"Backpack","rarity":"","price":{"g":2,"s":0,"c":0},"category":"Adventuring Gear","description":"A sturdy pack for carrying gear, pouches, and small supplies.","image":"","url":""},
+  {"id":"it_021","name":"Bedroll","rarity":"","price":{"g":1,"s":0,"c":0},"category":"Adventuring Gear","description":"A simple roll of blankets and cloth for sleeping outdoors.","image":"","url":""},
+  {"id":"it_022","name":"Rations (1 day)","rarity":"","price":{"g":0,"s":5,"c":0},"category":"Food","description":"Preserved food and provisions sufficient for one person for a day.","image":"","url":""},
+  {"id":"it_023","name":"Waterskin","rarity":"","price":{"g":0,"s":2,"c":0},"category":"Adventuring Gear","description":"A leather container for carrying water or other liquids.","image":"","url":""},
+  {"id":"it_024","name":"Torch","rarity":"","price":{"g":0,"s":1,"c":0},"category":"Light Source","description":"A simple flame source for light; burns for a limited time.","image":"","url":""},
+  {"id":"it_025","name":"Lantern, Hooded","rarity":"","price":{"g":5,"s":0,"c":0},"category":"Light Source","description":"A lantern with a hood to control light direction and reduce glare.","image":"","url":""},
+  {"id":"it_026","name":"Flint and Steel","rarity":"","price":{"g":0,"s":1,"c":0},"category":"Adventuring Gear","description":"A basic kit for starting fires reliably.","image":"","url":""},
+  {"id":"it_027","name":"Rope, Hempen (50 ft)","rarity":"","price":{"g":1,"s":0,"c":0},"category":"Adventuring Gear","description":"A length of sturdy rope useful for climbing, tying, and hauling.","image":"","url":""},
+  {"id":"it_028","name":"Grappling Hook","rarity":"","price":{"g":2,"s":0,"c":0},"category":"Adventuring Gear","description":"A metal hook used with rope to secure a line to a surface.","image":"","url":""},
+  {"id":"it_029","name":"Crowbar","rarity":"","price":{"g":2,"s":0,"c":0},"category":"Adventuring Gear","description":"A metal bar used for prying open doors, crates, and other obstacles.","image":"","url":""},
+  {"id":"it_030","name":"Hammer and Pitons","rarity":"","price":{"g":1,"s":0,"c":0},"category":"Adventuring Gear","description":"A small hammer and metal spikes for securing ropes and anchors.","image":"","url":""},
+  {"id":"it_031","name":"Fishing Tackle","rarity":"","price":{"g":1,"s":0,"c":0},"category":"Adventuring Gear","description":"Basic gear for catching fish while traveling or camping.","image":"","url":""},
+  {"id":"it_032","name":"Signal Whistle","rarity":"","price":{"g":0,"s":5,"c":0},"category":"Adventuring Gear","description":"A small whistle used to attract attention or send simple signals.","image":"","url":""},
+  {"id":"it_033","name":"Torch, Bullseye (special)","rarity":"","price":{"g":1,"s":0,"c":0},"category":"Light Source","description":"A brighter, longer-burning torch variant for extended illumination.","image":"","url":""},
+
+  {"id":"it_034","name":"Healer's Kit","rarity":"Common","price":{"g":5,"s":0,"c":0},"category":"Kits & Survival","description":"Bandages and salves for stabilizing and treating wounds in the field.","image":"","url":""},
+  {"id":"it_035","name":"Climber's Kit","rarity":"Uncommon","price":{"g":25,"s":0,"c":0},"category":"Kits & Survival","description":"Tools and equipment to aid climbing and secure anchors.","image":"","url":""},
+  {"id":"it_036","name":"Thieves' Tools","rarity":"Uncommon","price":{"g":25,"s":0,"c":0},"category":"Tools","description":"A compact set of picks and small tools for manipulating locks and traps.","image":"","url":""},
+  {"id":"it_037","name":"Smith's Tools","rarity":"Uncommon","price":{"g":20,"s":0,"c":0},"category":"Tools","description":"Hammers, tongs, and files for metalworking and repairs.","image":"","url":""},
+  {"id":"it_038","name":"Herbalism Kit","rarity":"Common","price":{"g":5,"s":0,"c":0},"category":"Tools","description":"Pouches and tools for identifying and preparing medicinal herbs.","image":"","url":""},
+  {"id":"it_039","name":"Navigator's Tools","rarity":"Uncommon","price":{"g":25,"s":0,"c":0},"category":"Tools","description":"Instruments for charting courses and reading maps at sea or on land.","image":"","url":""},
+
+  {"id":"it_040","name":"Backpack, Explorer's","rarity":"","price":{"g":5,"s":0,"c":0},"category":"Containers","description":"A reinforced pack with compartments for long expeditions.","image":"","url":""},
+  {"id":"it_041","name":"Pouch (small)","rarity":"","price":{"g":0,"s":1,"c":0},"category":"Containers","description":"A small leather pouch for coins and tiny items.","image":"","url":""},
+  {"id":"it_042","name":"Sack (large)","rarity":"","price":{"g":0,"s":1,"c":0},"category":"Containers","description":"A large cloth sack for bulkier supplies.","image":"","url":""},
+
+  {"id":"it_043","name":"Common Clothes","rarity":"","price":{"g":0,"s":5,"c":0},"category":"Clothing","description":"Everyday garments suitable for travel and townsfolk.","image":"","url":""},
+  {"id":"it_044","name":"Traveler's Clothes","rarity":"","price":{"g":2,"s":0,"c":0},"category":"Clothing","description":"Durable clothing designed for long journeys and rough weather.","image":"","url":""},
+  {"id":"it_045","name":"Fine Clothes","rarity":"Uncommon","price":{"g":15,"s":0,"c":0},"category":"Clothing","description":"High-quality garments suitable for formal occasions.","image":"","url":""},
+
+  {"id":"it_046","name":"Horse, Riding","rarity":"","price":{"g":75,"s":0,"c":0},"category":"Mounts & Travel","description":"A trained riding horse for travel and light work.","image":"","url":""},
+  {"id":"it_047","name":"Donkey","rarity":"","price":{"g":8,"s":0,"c":0},"category":"Mounts & Travel","description":"A sturdy pack animal useful for carrying supplies over rough terrain.","image":"","url":""},
+  {"id":"it_048","name":"Cart (two-wheeled)","rarity":"","price":{"g":15,"s":0,"c":0},"category":"Mounts & Travel","description":"A small cart for hauling goods behind animals.","image":"","url":""},
+  {"id":"it_049","name":"Saddle, Riding","rarity":"","price":{"g":10,"s":0,"c":0},"category":"Mounts & Travel","description":"A basic saddle for comfortable riding and control.","image":"","url":""},
+
+  {"id":"it_050","name":"Gemstone (small)","rarity":"Uncommon","price":{"g":50,"s":0,"c":0},"category":"Trade Goods","description":"A small polished gem used as trade or luxury currency.","image":"","url":""},
+  {"id":"it_051","name":"Silk Bolt","rarity":"Uncommon","price":{"g":10,"s":0,"c":0},"category":"Trade Goods","description":"A length of fine silk fabric prized for clothing and decoration.","image":"","url":""},
+  {"id":"it_052","name":"Iron Ingot","rarity":"","price":{"g":2,"s":0,"c":0},"category":"Trade Goods","description":"A bar of smelted iron used in crafting and trade.","image":"","url":""},
+
+  {"id":"it_053","name":"Lute","rarity":"","price":{"g":35,"s":0,"c":0},"category":"Musical Instrument","description":"A stringed instrument used for performance and entertainment.","image":"","url":""},
+  {"id":"it_054","name":"Drum","rarity":"","price":{"g":6,"s":0,"c":0},"category":"Musical Instrument","description":"A percussion instrument used for rhythm and signaling.","image":"","url":""},
+
+  {"id":"it_055","name":"Lockbox (small)","rarity":"Uncommon","price":{"g":25,"s":0,"c":0},"category":"Containers","description":"A small locked chest for securing valuables.","image":"","url":""},
+  {"id":"it_056","name":"Map Case","rarity":"","price":{"g":1,"s":0,"c":0},"category":"Containers","description":"A waterproof tube for storing maps and documents.","image":"","url":""},
+
+  {"id":"it_057","name":"Healing Potion (minor)","rarity":"Common","price":{"g":50,"s":0,"c":0},"category":"Adventuring Gear","description":"A small vial of restorative liquid that mends minor wounds.","image":"","url":""},
+  {"id":"it_058","name":"Antitoxin","rarity":"Uncommon","price":{"g":50,"s":0,"c":0},"category":"Adventuring Gear","description":"A potion that helps resist the effects of common poisons.","image":"","url":""},
+
+  {"id":"it_059","name":"Ink and Quill","rarity":"","price":{"g":0,"s":10,"c":0},"category":"Adventuring Gear","description":"Basic writing supplies for recording notes and maps.","image":"","url":""},
+  {"id":"it_060","name":"Paper (10 sheets)","rarity":"","price":{"g":0,"s":2,"c":0},"category":"Adventuring Gear","description":"Sheets of paper for letters, maps, and records.","image":"","url":""},
+
+  {"id":"it_061","name":"Torch, Signal","rarity":"","price":{"g":0,"s":2,"c":0},"category":"Light Source","description":"A torch designed to produce a bright, visible signal at distance.","image":"","url":""},
+  {"id":"it_062","name":"Bell","rarity":"","price":{"g":1,"s":0,"c":0},"category":"Adventuring Gear","description":"A small bell used for alarms or signaling.","image":"","url":""},
+
+  {"id":"it_063","name":"Sewing Kit","rarity":"","price":{"g":0,"s":5,"c":0},"category":"Tools","description":"Needles, thread, and small tools for repairing clothing and gear.","image":"","url":""},
+  {"id":"it_064","name":"Cook's Utensils","rarity":"","price":{"g":1,"s":0,"c":0},"category":"Tools","description":"Pots, pans, and utensils for preparing meals while traveling.","image":"","url":""},
+
+  {"id":"it_065","name":"Blanket","rarity":"","price":{"g":0,"s":5,"c":0},"category":"Clothing","description":"A warm blanket for sleeping outdoors or in cold conditions.","image":"","url":""},
+  {"id":"it_066","name":"Winter Cloak","rarity":"Uncommon","price":{"g":5,"s":0,"c":0},"category":"Clothing","description":"A heavy cloak designed to protect against cold and wind.","image":"","url":""},
+
+  {"id":"it_067","name":"Torch, Oil (1 flask)","rarity":"","price":{"g":0,"s":1,"c":0},"category":"Light Source","description":"A small flask of lamp oil used to fuel lanterns and torches.","image":"","url":""},
+  {"id":"it_068","name":"Oil (1 flask)","rarity":"","price":{"g":0,"s":1,"c":0},"category":"Adventuring Gear","description":"A flask of oil used for lamps, lubrication, or improvised traps.","image":"","url":""},
+
+  {"id":"it_069","name":"Saddle, Pack","rarity":"","price":{"g":5,"s":0,"c":0},"category":"Mounts & Travel","description":"A saddle designed to carry cargo on pack animals.","image":"","url":""},
+  {"id":"it_070","name":"Hunting Trap","rarity":"","price":{"g":5,"s":0,"c":0},"category":"Adventuring Gear","description":"A mechanical trap for catching small to medium game.","image":"","url":""}
+]
